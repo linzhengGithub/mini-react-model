@@ -1,3 +1,73 @@
+// 任务调度器
+let nextWorkOfUnit = null
+function workLoop(deadLine) {
+  let shouldYield = false
+
+  while (!shouldYield && nextWorkOfUnit) {
+    nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit)
+    shouldYield = deadLine.timeRemaining() < 1
+  }
+
+  requestIdleCallback(workLoop)
+}
+
+requestIdleCallback(workLoop)
+
+function performWorkOfUnit(fiber) {
+  // 1. 生成dom
+  if (!fiber.dom) {
+    const dom = (fiber.dom = createDom(fiber.type))
+
+    fiber.parent.dom.append(dom)
+    // 2. 处理props
+    updateProps(dom, fiber.props)
+  }
+  // 3. 建立链表关系
+  initChildren(fiber)
+  // 4. 返回下一个要执行的任务
+  if (fiber.child) {
+    return fiber.child
+  }
+  if (fiber.sibling) {
+    return fiber.sibling
+  }
+  
+  return fiber.parent?.sibling
+}
+
+function createDom(type) {
+  return type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(type)
+}
+
+function updateProps(dom, props) {
+  Object.keys(props).forEach(key => {
+    if (key !== 'children') {
+      dom[key] = props[key]
+    }
+  })
+}
+
+function initChildren(fiber) {
+  const children = fiber.props.children
+  let prevChild = null
+  children.forEach((child, index) => {
+    const newFiber = {
+      type: child.type,
+      props: child.props,
+      parent: fiber,
+      child: null,
+      sibling: null,
+      dom: null
+    }
+    if (index === 0) {
+      fiber.child = newFiber
+    } else {
+      prevChild.sibling = newFiber
+    }
+    prevChild = newFiber
+  })
+}
+
 function createTextNode(text) {
   return {
     type: 'TEXT_ELEMENT',
@@ -7,6 +77,7 @@ function createTextNode(text) {
     }
   }
 }
+
 function createElement(type, props, ...children) {
   return {
     type,
@@ -20,20 +91,26 @@ function createElement(type, props, ...children) {
 }
 
 function render(el, container) {
-  const dom = el.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(el.type)
-
-  Object.keys(el.props).forEach(key => {
-    if (key !== 'children') {
-      dom[key] = el.props[key]
+  nextWorkOfUnit = {
+    dom: container,
+    props: {
+      children: [el]
     }
-  })
+  }
+  // const dom = el.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(el.type)
 
-  const children = el.props.children
-  children.forEach(child => {
-    render(child, dom)
-  })
+  // Object.keys(el.props).forEach(key => {
+  //   if (key !== 'children') {
+  //     dom[key] = el.props[key]
+  //   }
+  // })
 
-  container.append(dom)
+  // const children = el.props.children
+  // children.forEach(child => {
+  //   render(child, dom)
+  // })
+
+  // container.append(dom)
 }
 
 const React = {
