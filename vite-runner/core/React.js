@@ -9,7 +9,7 @@ function workLoop(deadLine) {
     shouldYield = deadLine.timeRemaining() < 1
   }
 
-  if(!nextWorkOfUnit && root) {
+  if (!nextWorkOfUnit && root) {
     commitRoot()
   }
 
@@ -19,23 +19,40 @@ function workLoop(deadLine) {
 requestIdleCallback(workLoop)
 
 function performWorkOfUnit(fiber) {
-  // 1. 生成dom
-  if (!fiber.dom) {
-    const dom = (fiber.dom = createDom(fiber.type))
-    // 2. 处理props
-    updateProps(dom, fiber.props)
+  const isFunctionComponent = typeof fiber.type === 'function'
+
+  if(isFunctionComponent) {
+    updateFunctionComponent(fiber)
+  } else {
+    updateHostComponent(fiber)
   }
-  // 3. 建立链表关系 设置好指针关系
-  initChildren(fiber)
-  // 4. 返回下一个要执行的任务
+
+  // 执行下一个任务
   if (fiber.child) {
     return fiber.child
   }
-  if (fiber.sibling) {
-    return fiber.sibling
+
+  // 循环找到兄弟节点
+  let nextFiber = fiber
+  while (nextFiber) {
+    if (nextFiber.sibling) return nextFiber.sibling
+    nextFiber = nextFiber.parent
   }
-  
-  return fiber.parent?.sibling
+}
+
+function updateFunctionComponent(fiber) {
+  const children = [fiber.type(fiber.props)]
+  initChildren(fiber, children)
+}
+
+function updateHostComponent(fiber) {
+  if (!fiber.dom) {
+    const dom = (fiber.dom = createDom(fiber.type))
+    updateProps(dom, fiber.props)
+  }
+
+  const children = fiber.props.children
+  initChildren(fiber, children)
 }
 
 function commitRoot() {
@@ -43,8 +60,16 @@ function commitRoot() {
   root = null
 }
 function commitWork(fiber) {
-  if(!fiber) return
-  fiber.parent.dom.append(fiber.dom)
+  if (!fiber) return
+
+  let fiberParent = fiber.parent
+  while (!fiberParent.dom) {
+    fiberParent = fiberParent.parent
+  }
+
+  if (fiber.dom) {
+    fiberParent.dom.append(fiber.dom)
+  }
   commitWork(fiber.child)
   commitWork(fiber.sibling)
 }
@@ -62,8 +87,7 @@ function updateProps(dom, props) {
 }
 
 // 关键部分
-function initChildren(fiber) {
-  const children = fiber.props.children
+function initChildren(fiber, children) {
   let prevChild = null
   children.forEach((child, index) => {
     const newFiber = {
@@ -99,7 +123,8 @@ function createElement(type, props, ...children) {
     props: {
       ...props,
       children: children.map(child => {
-        return typeof child === 'string' ? createTextNode(child) : child
+        const isTextNode = typeof child === 'string' || typeof child === 'number'
+        return isTextNode ? createTextNode(child) : child
       })
     }
   }
