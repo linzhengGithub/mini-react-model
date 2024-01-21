@@ -1,11 +1,16 @@
 // 任务调度器
 let nextWorkOfUnit = null
+let root = null
 function workLoop(deadLine) {
   let shouldYield = false
 
   while (!shouldYield && nextWorkOfUnit) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit)
     shouldYield = deadLine.timeRemaining() < 1
+  }
+
+  if(!nextWorkOfUnit && root) {
+    commitRoot()
   }
 
   requestIdleCallback(workLoop)
@@ -17,12 +22,10 @@ function performWorkOfUnit(fiber) {
   // 1. 生成dom
   if (!fiber.dom) {
     const dom = (fiber.dom = createDom(fiber.type))
-
-    fiber.parent.dom.append(dom)
     // 2. 处理props
     updateProps(dom, fiber.props)
   }
-  // 3. 建立链表关系
+  // 3. 建立链表关系 设置好指针关系
   initChildren(fiber)
   // 4. 返回下一个要执行的任务
   if (fiber.child) {
@@ -33,6 +36,17 @@ function performWorkOfUnit(fiber) {
   }
   
   return fiber.parent?.sibling
+}
+
+function commitRoot() {
+  commitWork(root.child)
+  root = null
+}
+function commitWork(fiber) {
+  if(!fiber) return
+  fiber.parent.dom.append(fiber.dom)
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
 }
 
 function createDom(type) {
@@ -47,6 +61,7 @@ function updateProps(dom, props) {
   })
 }
 
+// 关键部分
 function initChildren(fiber) {
   const children = fiber.props.children
   let prevChild = null
@@ -97,6 +112,7 @@ function render(el, container) {
       children: [el]
     }
   }
+  root = nextWorkOfUnit
   // const dom = el.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(el.type)
 
   // Object.keys(el.props).forEach(key => {
