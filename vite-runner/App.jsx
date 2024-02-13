@@ -6,19 +6,15 @@ const Counter = () => {
   function Foo() {
     return <div>
       foo
-      <div>child1</div>
-      <div>child2</div>
     </div>
   }
-  const bar = <p>bar</p>
   function handleClick() {
     show = !show
     React.update()
   }
   return (<div>
-    <div>
-      {show ? <Foo /> : bar}
-    </div>
+    bar
+    {show && <Foo />}
     <button onClick={handleClick}>click</button>
   </div>)
 }
