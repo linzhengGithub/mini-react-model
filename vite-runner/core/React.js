@@ -172,7 +172,11 @@ function reconcileChildren(fiber, children) {
     if (index === 0) {
       fiber.child = newFiber
     } else {
-      prevChild.sibling = newFiber
+      if (!fiber.child) {
+        fiber.child = newFiber
+      } else {
+        prevChild.sibling = newFiber
+      }
     }
 
     if (newFiber) {

@@ -13,8 +13,8 @@ const Counter = () => {
     React.update()
   }
   return (<div>
-    bar
     {show && <Foo />}
+    bar
     <button onClick={handleClick}>click</button>
   </div>)
 }
