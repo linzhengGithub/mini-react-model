@@ -21,7 +21,7 @@ requestIdleCallback(workLoop)
 function performWorkOfUnit(fiber) {
   const isFunctionComponent = typeof fiber.type === 'function'
 
-  if(isFunctionComponent) {
+  if (isFunctionComponent) {
     updateFunctionComponent(fiber)
   } else {
     updateHostComponent(fiber)
@@ -81,7 +81,12 @@ function createDom(type) {
 function updateProps(dom, props) {
   Object.keys(props).forEach(key => {
     if (key !== 'children') {
-      dom[key] = props[key]
+      if (key.startsWith('on')) {
+        const eventType = key.slice(2).toLowerCase()
+        dom.addEventListener(eventType, props[key])
+      } else {
+        dom[key] = props[key]
+      }
     }
   })
 }
