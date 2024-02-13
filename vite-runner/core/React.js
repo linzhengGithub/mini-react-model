@@ -2,6 +2,7 @@
 let nextWorkOfUnit = null
 let currentRoot = null
 let wipRoot = null
+let deletions = []
 function workLoop(deadLine) {
   let shouldYield = false
 
@@ -57,10 +58,25 @@ function updateHostComponent(fiber) {
 }
 
 function commitRoot() {
+  deletions.forEach(commitDeletion)
   commitWork(wipRoot.child)
   currentRoot = wipRoot
   wipRoot = null
+  deletions = []
 }
+
+function commitDeletion(fiber) {
+  if (fiber.dom) {
+    let fiberParent = fiber.parent
+    while (!fiberParent.dom) {
+      fiberParent = fiberParent.parent
+    }
+    fiberParent.dom.removeChild(fiber.dom)
+  } else {
+    commitDeletion(fiber.child)
+  }
+}
+
 function commitWork(fiber) {
   if (!fiber) return
 
@@ -139,6 +155,10 @@ function reconcileChildren(fiber, children) {
         sibling: null,
         dom: null,
         effectTag: 'placement'
+      }
+
+      if (oldFiber) {
+        deletions.push(oldFiber)
       }
     }
 

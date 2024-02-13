@@ -1,18 +1,20 @@
 import React from './core/React.js';
 
 // const App = React.createElement('div', { id: 'app' }, 'hi - ', 'mini - react')
-let count = 10
-let props = {id: '123'}
-
+let show = false
 const Counter = () => {
+  function Foo() {
+    return <div>foo</div>
+  }
+  const bar = <p>bar</p>
   function handleClick() {
-    console.log('click');
-    count++
-    props = {}
+    show = !show
     React.update()
   }
-  return (<div {...props}>
-    count: {count}
+  return (<div>
+    <div>
+      {show ? <Foo /> : bar}
+    </div>
     <button onClick={handleClick}>click</button>
   </div>)
 }
