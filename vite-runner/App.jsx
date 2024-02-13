@@ -4,7 +4,11 @@ import React from './core/React.js';
 let show = false
 const Counter = () => {
   function Foo() {
-    return <div>foo</div>
+    return <div>
+      foo
+      <div>child1</div>
+      <div>child2</div>
+    </div>
   }
   const bar = <p>bar</p>
   function handleClick() {
