@@ -1,7 +1,7 @@
 // 任务调度器
 let nextWorkOfUnit = null
 let currentRoot = null
-let root = null
+let wipRoot = null
 function workLoop(deadLine) {
   let shouldYield = false
 
@@ -10,7 +10,7 @@ function workLoop(deadLine) {
     shouldYield = deadLine.timeRemaining() < 1
   }
 
-  if (!nextWorkOfUnit && root) {
+  if (!nextWorkOfUnit && wipRoot) {
     commitRoot()
   }
 
@@ -43,7 +43,7 @@ function performWorkOfUnit(fiber) {
 
 function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)]
-  initChildren(fiber, children)
+  reconcileChildren(fiber, children)
 }
 
 function updateHostComponent(fiber) {
@@ -53,13 +53,13 @@ function updateHostComponent(fiber) {
   }
 
   const children = fiber.props.children
-  initChildren(fiber, children)
+  reconcileChildren(fiber, children)
 }
 
 function commitRoot() {
-  commitWork(root.child)
-  currentRoot = root
-  root = null
+  commitWork(wipRoot.child)
+  currentRoot = wipRoot
+  wipRoot = null
 }
 function commitWork(fiber) {
   if (!fiber) return
@@ -113,7 +113,7 @@ function updateProps(dom, nextProps, prevProps) {
 }
 
 // 关键部分
-function initChildren(fiber, children) {
+function reconcileChildren(fiber, children) {
   let oldFiber = fiber.alternate?.child
   let prevChild = null
   children.forEach((child, index) => {
@@ -179,13 +179,13 @@ function createElement(type, props, ...children) {
 }
 
 function render(el, container) {
-  nextWorkOfUnit = {
+  wipRoot = {
     dom: container,
     props: {
       children: [el]
     }
   }
-  root = nextWorkOfUnit
+  nextWorkOfUnit = wipRoot
   // const dom = el.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(el.type)
 
   // Object.keys(el.props).forEach(key => {
@@ -203,12 +203,12 @@ function render(el, container) {
 }
 
 function update() {
-  nextWorkOfUnit = {
+  wipRoot = {
     dom: currentRoot,
     props: currentRoot.props,
     alternate: currentRoot
   }
-  root = nextWorkOfUnit
+  nextWorkOfUnit = wipRoot
 }
 
 const React = {
