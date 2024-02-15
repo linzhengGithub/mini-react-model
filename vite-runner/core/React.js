@@ -272,7 +272,7 @@ function useState(initial) {
   stateHook.queue.forEach(action => {
     stateHook.state = action(stateHook.state)
   })
-  
+
   stateHook.queue = []
 
   stateIndex++
@@ -280,9 +280,11 @@ function useState(initial) {
   currentFiber.stateHooks = stateHooks
 
   function setState(action) {
-    const newA = typeof action === 'function' ? action : () => action
-    stateHook.queue.push(newA)
-    
+    const eagerState = typeof action === 'function' ? action(stateHook.state) : action
+    if(eagerState === stateHook.state) return;
+
+    const checkInAction = typeof action === 'function' ? action : () => action
+    stateHook.queue.push(checkInAction)
 
     wipRoot = {
       ...currentFiber,
