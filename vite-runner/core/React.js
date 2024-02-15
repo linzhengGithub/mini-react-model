@@ -49,6 +49,8 @@ function performWorkOfUnit(fiber) {
 }
 
 function updateFunctionComponent(fiber) {
+  stateHooks = []
+  stateIndex = 0
   wipFiber = fiber
   const children = [fiber.type(fiber.props)]
   reconcileChildren(fiber, children)
@@ -256,19 +258,22 @@ function update() {
   }
 }
 
+let stateHooks;
+let stateIndex;
 function useState(initial) {
   let currentFiber = wipFiber
-  const oldHook = currentFiber.alternate?.stateHook
+  const oldHook = currentFiber.alternate?.stateHooks[stateIndex]
 
   const stateHook = {
     state: oldHook ? oldHook.state : initial
   }
 
-  currentFiber.stateHook = stateHook
+  stateIndex++
+  stateHooks.push(stateHook)
+  currentFiber.stateHooks = stateHooks
 
   function setState(action) {
     stateHook.state = action(stateHook.state)
-    console.log(stateHook.state);
 
     wipRoot = {
       ...currentFiber,
