@@ -6,10 +6,23 @@ function Foo() {
 
   React.useEffect(() => {
     console.log('init');
+    return () => {
+      console.log('cleanup 0');
+    }
   }, [])
 
   React.useEffect(() => {
-    console.log('update', count);
+    console.log('update1', count);
+    return () => {
+      console.log('cleanup 1');
+    }
+  }, [count])
+
+  React.useEffect(() => {
+    console.log('update2', count);
+    return () => {
+      console.log('cleanup 2');
+    }
   }, [count])
 
   function handleClick() {
