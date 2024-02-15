@@ -265,15 +265,24 @@ function useState(initial) {
   const oldHook = currentFiber.alternate?.stateHooks[stateIndex]
 
   const stateHook = {
-    state: oldHook ? oldHook.state : initial
+    state: oldHook ? oldHook.state : initial,
+    queue: oldHook ? oldHook.queue : []
   }
+
+  stateHook.queue.forEach(action => {
+    stateHook.state = action(stateHook.state)
+  })
+  
+  stateHook.queue = []
 
   stateIndex++
   stateHooks.push(stateHook)
   currentFiber.stateHooks = stateHooks
 
   function setState(action) {
-    stateHook.state = action(stateHook.state)
+    const newA = typeof action === 'function' ? action : () => action
+    stateHook.queue.push(newA)
+    
 
     wipRoot = {
       ...currentFiber,
