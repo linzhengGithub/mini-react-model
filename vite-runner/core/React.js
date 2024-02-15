@@ -10,7 +10,7 @@ function workLoop(deadLine) {
   while (!shouldYield && nextWorkOfUnit) {
     nextWorkOfUnit = performWorkOfUnit(nextWorkOfUnit)
 
-    if(wipRoot?.sibling?.type === nextWorkOfUnit?.type){
+    if (wipRoot?.sibling?.type === nextWorkOfUnit?.type) {
       nextWorkOfUnit = undefined
     }
 
@@ -256,7 +256,32 @@ function update() {
   }
 }
 
+function useState(initial) {
+  let currentFiber = wipFiber
+  const oldHook = currentFiber.alternate?.stateHook
+
+  const stateHook = {
+    state: oldHook ? oldHook.state : initial
+  }
+
+  currentFiber.stateHook = stateHook
+
+  function setState(action) {
+    stateHook.state = action(stateHook.state)
+    console.log(stateHook.state);
+
+    wipRoot = {
+      ...currentFiber,
+      alternate: currentFiber
+    }
+    nextWorkOfUnit = wipRoot
+  }
+
+  return [stateHook.state, setState]
+}
+
 const React = {
+  useState,
   update,
   render,
   createElement
